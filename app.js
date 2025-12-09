@@ -621,7 +621,14 @@ function showHint() {
     currentScore = Math.max(0, currentScore - 10); // -10 pontos por dica
     updateCurrentStats();
     
-    const groupKey = currentFamily.multiGroup ? 'multi' : currentFamily.group;
+    let groupKey;
+    if (currentFamily.group === 'Ln') groupKey = 'Ln';
+    else if (currentFamily.group === 'An') groupKey = 'An';
+    else if (currentFamily.group === 'P7') groupKey = 'P7';
+    else if (currentFamily.name === 'Hidrogênio') groupKey = 'H';
+    else if (currentFamily.multiGroup) groupKey = 'multi';
+    else groupKey = currentFamily.group;
+    
     const hint = HINTS_CONFIG[groupKey] || HINTS_CONFIG['multi'];
     
     DOM.modalTitle.textContent = '💡 Dica (-10 pontos)';
