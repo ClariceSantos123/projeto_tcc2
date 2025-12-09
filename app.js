@@ -414,11 +414,12 @@ function createLanthanideActinideSlots() {
         background: #f0f0ff;
         border-radius: 5px;
         margin: 10px 0;
+        font-size: 1.2em;
     `;
     title.textContent = currentFamily.name;
     DOM.tableGrid.appendChild(title);
     
-    // Criar grid horizontal para os elementos
+    // Criar grid horizontal para os elementos (15 elementos)
     const specialGrid = document.createElement('div');
     specialGrid.style.cssText = `
         grid-column: 1 / -1;
