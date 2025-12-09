@@ -42,7 +42,15 @@ const DOM = {
     btnHint: document.getElementById('btnHint'),
     btnReset: document.getElementById('btnReset'),
     btnMenu: document.getElementById('btnMenu'),
-    btnCloseModal: document.getElementById('btnCloseModal')
+    btnCloseModal: document.getElementById('btnCloseModal'),
+    btnResetAll: document.getElementById('btnResetAll'),
+    // Estatísticas
+    totalScore: document.getElementById('totalScore'),
+    totalElements: document.getElementById('totalElements'),
+    totalFamilies: document.getElementById('totalFamilies'),
+    currentScore: document.getElementById('currentScore'),
+    currentStars: document.getElementById('currentStars'),
+    timer: document.getElementById('timer')
 };
 
 // ============================================
@@ -51,8 +59,10 @@ const DOM = {
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
+    loadProgress();
     renderFamilyCards();
     setupEventListeners();
+    updateGlobalStats();
 }
 
 function setupEventListeners() {
@@ -60,14 +70,108 @@ function setupEventListeners() {
     DOM.btnReset.addEventListener('click', resetGame);
     DOM.btnMenu.addEventListener('click', backToMenu);
     DOM.btnCloseModal.addEventListener('click', closeModal);
+    DOM.btnResetAll.addEventListener('click', resetAllProgress);
     DOM.infoModal.addEventListener('click', (e) => {
         if (e.target === DOM.infoModal) closeModal();
     });
 }
 
 // ============================================
-// RENDERIZAÇÃO DOS CARDS DE FAMÍLIAS
+// PERSISTÊNCIA DE DADOS (LocalStorage)
 // ============================================
+function loadProgress() {
+    const saved = localStorage.getItem('tabelaPeriodicaProgress');
+    if (saved) {
+        const data = JSON.parse(saved);
+        completedElements = new Set(data.completedElements || []);
+        completedFamilies = new Set(data.completedFamilies || []);
+        totalScore = data.totalScore || 0;
+    }
+}
+
+function saveProgress() {
+    const data = {
+        completedElements: Array.from(completedElements),
+        completedFamilies: Array.from(completedFamilies),
+        totalScore: totalScore
+    };
+    localStorage.setItem('tabelaPeriodicaProgress', JSON.stringify(data));
+}
+
+function resetAllProgress() {
+    if (confirm('Tem certeza que deseja resetar TODO o seu progresso? Esta ação não pode ser desfeita!')) {
+        localStorage.removeItem('tabelaPeriodicaProgress');
+        completedElements = new Set();
+        completedFamilies = new Set();
+        totalScore = 0;
+        updateGlobalStats();
+        renderFamilyCards();
+        alert('Progresso resetado com sucesso!');
+    }
+}
+
+function updateGlobalStats() {
+    DOM.totalScore.textContent = totalScore.toLocaleString();
+    DOM.totalElements.textContent = `${completedElements.size}/115`;
+    DOM.totalFamilies.textContent = `${completedFamilies.size}/19`;
+}
+
+// ============================================
+// SISTEMA DE PONTUAÇÃO E TIMER
+// ============================================
+function startTimer() {
+    startTime = Date.now();
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function updateTimer() {
+    if (!startTime) return;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    DOM.timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function calculateScore() {
+    const timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+    const elementsCount = currentElements.length;
+    
+    // Pontuação base: 10 pontos por elemento
+    let baseScore = elementsCount * 10;
+    
+    // Bônus de tempo (quanto mais rápido, mais pontos)
+    // Perfeito: < 30 segundos = +50%, < 60s = +30%, < 120s = +10%
+    let timeBonus = 0;
+    const timePerElement = timeElapsed / elementsCount;
+    if (timePerElement < 5) timeBonus = 0.5;
+    else if (timePerElement < 10) timeBonus = 0.3;
+    else if (timePerElement < 20) timeBonus = 0.1;
+    
+    // Penalidade por dicas (-10 pontos cada)
+    const hintsPenalty = hintsUsed * 10;
+    
+    // Cálculo final
+    const finalScore = Math.max(0, Math.floor(baseScore * (1 + timeBonus) - hintsPenalty));
+    
+    // Estrelas (1-3 baseado no desempenho)
+    let stars = 1;
+    if (timeBonus >= 0.3 && hintsUsed === 0) stars = 3;
+    else if (timeBonus >= 0.1 || hintsUsed <= 1) stars = 2;
+    
+    return { score: finalScore, stars, timeElapsed, timeBonus, hintsPenalty };
+}
+
+function updateCurrentStats() {
+    DOM.currentScore.textContent = currentScore;
+    DOM.currentStars.textContent = currentStars;
+}
 function renderFamilyCards() {
     DOM.familyGrid.innerHTML = '';
     
@@ -133,18 +237,35 @@ function startGame(familyKey) {
 
 function initGame() {
     placedElements = 0;
+    currentScore = 0;
+    currentStars = 0;
+    hintsUsed = 0;
+    startTime = null;
+    stopTimer();
+    
     updateProgress();
+    updateCurrentStats();
     createTable();
     createElementsPool();
+    
+    // Debug: verificar se elementos foram criados
+    console.log('Elementos atuais:', currentElements.length);
+    console.log('Elementos já completados:', completedElements.size);
+    console.log('Elementos para colocar:', currentElements.filter(el => !completedElements.has(el.number)).length);
 }
 
 function resetGame() {
-    initGame();
+    if (confirm('Tem certeza que deseja reiniciar esta família?')) {
+        initGame();
+    }
 }
 
 function backToMenu() {
+    stopTimer();
     DOM.gameScreen.classList.remove('active');
     DOM.selectionScreen.classList.add('active');
+    updateGlobalStats();
+    renderFamilyCards();
 }
 
 // ============================================
@@ -223,12 +344,35 @@ function createTableSlots() {
                 grid-row: ${period + 1};
             `;
             
-            // Verificar se é slot ativo
+            // Verificar se é slot ativo OU se já foi completado anteriormente
             const element = currentElements.find(el => 
                 el.period === period && el.group === group
             );
             
-            if (element) {
+            // Procurar em TODAS as famílias se este elemento já foi completado
+            let completedElement = null;
+            for (const family of Object.values(FAMILIES_DATA)) {
+                const found = family.elements.find(el => 
+                    el.period === period && el.group === group && completedElements.has(el.number)
+                );
+                if (found) {
+                    completedElement = found;
+                    break;
+                }
+            }
+            
+            if (completedElement) {
+                // Elemento já completado anteriormente - mostrar permanentemente
+                slot.classList.add('filled', 'permanent');
+                slot.innerHTML = `
+                    <div class="element-display">
+                        <div class="element-number">${completedElement.number}</div>
+                        <div class="element-symbol">${completedElement.symbol}</div>
+                        <div class="element-name">${completedElement.name}</div>
+                    </div>
+                `;
+            } else if (element) {
+                // Slot ativo para a família atual
                 slot.classList.add('active');
                 slot.dataset.number = element.number;
                 slot.dataset.period = element.period;
@@ -237,6 +381,7 @@ function createTableSlots() {
                 slot.addEventListener('dragover', handleDragOver);
                 slot.addEventListener('drop', handleDrop);
             } else {
+                // Slot inativo
                 slot.classList.add('inactive');
             }
             
@@ -245,18 +390,31 @@ function createTableSlots() {
     });
 }
 
-// ============================================
-// POOL DE ELEMENTOS
-// ============================================
 function createElementsPool() {
-    DOM.elementsPool.querySelector('.pool-grid').innerHTML = '';
+    const poolGrid = DOM.elementsPool.querySelector('.pool-grid');
+    if (!poolGrid) return;
+    
+    poolGrid.innerHTML = '';
+    
+    // Filtrar apenas elementos que ainda não foram completados
+    const elementsToPlace = currentElements.filter(el => !completedElements.has(el.number));
+    
+    if (elementsToPlace.length === 0) {
+        // Todos os elementos desta família já foram completados
+        poolGrid.innerHTML = `
+            <p style="text-align: center; color: #4CAF50; font-weight: bold; width: 100%; padding: 20px;">
+                ✓ Todos os elementos desta família já foram completados!
+            </p>
+        `;
+        return;
+    }
     
     // Embaralhar elementos
-    const shuffled = shuffleArray([...currentElements]);
+    const shuffled = shuffleArray([...elementsToPlace]);
     
     shuffled.forEach(element => {
         const card = createElementCard(element);
-        DOM.elementsPool.querySelector('.pool-grid').appendChild(card);
+        poolGrid.appendChild(card);
     });
 }
 
@@ -304,21 +462,39 @@ function handleDrop(e) {
     const slotNumber = slot.dataset.number;
     
     if (droppedNumber === slotNumber && !slot.classList.contains('filled')) {
+        // Iniciar timer no primeiro acerto
+        if (!startTime) {
+            startTimer();
+        }
+        
         // Acerto
-        slot.innerHTML = draggedElement.innerHTML;
+        const element = currentElements.find(el => el.number == droppedNumber);
+        slot.innerHTML = `
+            <div class="element-display">
+                <div class="element-number">${element.number}</div>
+                <div class="element-symbol">${element.symbol}</div>
+                <div class="element-name">${element.name}</div>
+            </div>
+        `;
         slot.classList.add('filled');
         slot.classList.remove('active');
         draggedElement.remove();
         
+        // Adicionar aos elementos completados
+        completedElements.add(parseInt(droppedNumber));
+        
         placedElements++;
+        currentScore += 10; // +10 pontos por acerto
+        
         updateProgress();
+        updateCurrentStats();
         
         // Mostrar informações
-        const element = currentElements.find(el => el.number == droppedNumber);
         showElementInfo(element);
         
         // Verificar conclusão
-        if (placedElements === currentElements.length) {
+        if (placedElements === currentElements.filter(el => !completedElements.has(el.number)).length) {
+            stopTimer();
             setTimeout(showCompletionMessage, 500);
         }
     } else {
@@ -358,29 +534,87 @@ function showElementInfo(element) {
 }
 
 function showHint() {
+    hintsUsed++;
+    currentScore = Math.max(0, currentScore - 10); // -10 pontos por dica
+    updateCurrentStats();
+    
     const groupKey = currentFamily.multiGroup ? 'multi' : currentFamily.group;
     const hint = HINTS_CONFIG[groupKey] || HINTS_CONFIG['multi'];
     
-    DOM.modalTitle.textContent = '💡 Dica';
+    DOM.modalTitle.textContent = '💡 Dica (-10 pontos)';
     DOM.modalBody.innerHTML = `
         <div class="hint-box">
             <h4>${hint.title}</h4>
             ${hint.tips.map(tip => `<p>• ${tip}</p>`).join('')}
             <p style="margin-top: 15px;">• Observe os números atômicos para descobrir a ordem!</p>
+            <p style="margin-top: 10px; color: #856404;"><strong>Dicas usadas: ${hintsUsed}</strong></p>
         </div>
     `;
     openModal();
 }
 
 function showCompletionMessage() {
+    const stats = calculateScore();
+    
+    // Atualizar pontuação global
+    totalScore += stats.score;
+    
+    // Verificar se a família foi 100% completada
+    const familyElementNumbers = currentFamily.elements.map(el => el.number);
+    const isFamilyComplete = familyElementNumbers.every(num => completedElements.has(num));
+    
+    if (isFamilyComplete && !completedFamilies.has(currentFamily.name)) {
+        completedFamilies.add(currentFamily.name);
+    }
+    
+    // Salvar progresso
+    saveProgress();
+    
+    // Gerar estrelas visuais
+    const starsHTML = '⭐'.repeat(stats.stars) + '☆'.repeat(3 - stats.stars);
+    
+    // Conquistas especiais
+    let achievements = [];
+    if (stats.stars === 3) achievements.push('🏆 Desempenho Perfeito!');
+    if (hintsUsed === 0) achievements.push('🧠 Mestre sem Dicas!');
+    if (stats.timeElapsed < currentElements.length * 5) achievements.push('⚡ Velocidade Relâmpago!');
+    
+    const achievementsHTML = achievements.length > 0 
+        ? achievements.map(a => `<span class="achievement-badge">${a}</span>`).join('')
+        : '';
+    
     DOM.modalTitle.textContent = '🎉 Parabéns!';
     DOM.modalBody.innerHTML = `
         <div class="success-message">
-            Você completou a família ${currentFamily.name}!
+            Você completou ${placedElements} elemento(s) da família ${currentFamily.name}!
         </div>
-        <p style="margin-top: 20px;">
-            Você organizou corretamente todos os ${currentElements.length} elementos.
+        
+        <div class="stars-display">${starsHTML}</div>
+        
+        <div class="score-display">
+            <div class="score-item">
+                <div class="score-icon">🏆</div>
+                <div class="score-value">${stats.score}</div>
+                <div class="score-label">Pontos</div>
+            </div>
+            <div class="score-item">
+                <div class="score-icon">⏱️</div>
+                <div class="score-value">${Math.floor(stats.timeElapsed / 60)}:${String(stats.timeElapsed % 60).padStart(2, '0')}</div>
+                <div class="score-label">Tempo</div>
+            </div>
+            <div class="score-item">
+                <div class="score-icon">💡</div>
+                <div class="score-value">${hintsUsed}</div>
+                <div class="score-label">Dicas</div>
+            </div>
+        </div>
+        
+        ${achievementsHTML}
+        
+        <p style="margin-top: 15px; text-align: center; color: #666;">
+            <strong>Pontuação Total:</strong> ${totalScore.toLocaleString()} pontos
         </p>
+        
         <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="resetGame(); closeModal();">🔄 Jogar Novamente</button>
             <button class="btn btn-secondary" onclick="backToMenu(); closeModal();">🏠 Escolher Outra Família</button>
