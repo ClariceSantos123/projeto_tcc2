@@ -91,6 +91,13 @@ function loadProgress() {
         completedElements = new Set(data.completedElements || []);
         completedFamilies = new Set(data.completedFamilies || []);
         totalScore = data.totalScore || 0;
+        
+        console.log('Progresso carregado:', {
+            elementos: completedElements.size,
+            familias: completedFamilies.size,
+            pontos: totalScore
+        });
+        console.log('Elementos completados:', Array.from(completedElements).sort((a,b) => a-b));
     }
 }
 
@@ -101,6 +108,12 @@ function saveProgress() {
         totalScore: totalScore
     };
     localStorage.setItem('tabelaPeriodicaProgress', JSON.stringify(data));
+    
+    console.log('Progresso salvo:', {
+        elementos: completedElements.size,
+        familias: completedFamilies.size,
+        pontos: totalScore
+    });
 }
 
 function resetAllProgress() {
@@ -446,8 +459,10 @@ function createLanthanideActinideSlots() {
             height: 60px;
         `;
         
-        // Verificar se já foi completado
-        if (completedElements.has(element.number)) {
+        // Verificar se já foi completado usando o Set
+        const isCompleted = completedElements.has(element.number);
+        
+        if (isCompleted) {
             slot.classList.add('filled', 'permanent');
             slot.innerHTML = `
                 <div class="element-display">
@@ -549,8 +564,8 @@ function handleDrop(e) {
     e.stopPropagation();
     
     const slot = e.currentTarget;
-    const droppedNumber = draggedElement.dataset.number;
-    const slotNumber = slot.dataset.number;
+    const droppedNumber = parseInt(draggedElement.dataset.number);
+    const slotNumber = parseInt(slot.dataset.number);
     
     if (droppedNumber === slotNumber && !slot.classList.contains('filled')) {
         // Iniciar timer no primeiro acerto
@@ -571,8 +586,9 @@ function handleDrop(e) {
         slot.classList.remove('active');
         draggedElement.remove();
         
-        // Adicionar aos elementos completados
-        completedElements.add(parseInt(droppedNumber));
+        // Adicionar aos elementos completados e salvar imediatamente
+        completedElements.add(droppedNumber);
+        saveProgress(); // Salvar após cada elemento colocado
         
         placedElements++;
         currentScore += 10; // +10 pontos por acerto
@@ -580,11 +596,14 @@ function handleDrop(e) {
         updateProgress();
         updateCurrentStats();
         
+        console.log('Elemento', droppedNumber, 'salvo. Total completados:', completedElements.size);
+        
         // Mostrar informações
         showElementInfo(element);
         
         // Verificar conclusão
-        if (placedElements === currentElements.filter(el => !completedElements.has(el.number)).length) {
+        const elementsToComplete = currentElements.filter(el => !completedElements.has(el.number));
+        if (elementsToComplete.length === 0 || placedElements === elementsToComplete.length) {
             stopTimer();
             setTimeout(showCompletionMessage, 500);
         }
