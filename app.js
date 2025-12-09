@@ -388,6 +388,79 @@ function createTableSlots() {
             DOM.tableGrid.appendChild(slot);
         });
     });
+    
+    // Adicionar slots especiais para Lantanídeos e Actinídeos se for necessário
+    if (currentFamily.group === 'Ln' || currentFamily.group === 'An') {
+        createLanthanideActinideSlots();
+    }
+}
+
+function createLanthanideActinideSlots() {
+    // Criar linha separada para Lantanídeos ou Actinídeos
+    const separator = document.createElement('div');
+    separator.style.cssText = `
+        grid-column: 1 / -1;
+        height: 20px;
+    `;
+    DOM.tableGrid.appendChild(separator);
+    
+    const title = document.createElement('div');
+    title.style.cssText = `
+        grid-column: 1 / -1;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-color);
+        background: #f0f0ff;
+        border-radius: 5px;
+        margin: 10px 0;
+    `;
+    title.textContent = currentFamily.name;
+    DOM.tableGrid.appendChild(title);
+    
+    // Criar grid horizontal para os elementos
+    const specialGrid = document.createElement('div');
+    specialGrid.style.cssText = `
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(15, 60px);
+        gap: 5px;
+        justify-content: center;
+        padding: 10px;
+    `;
+    
+    currentElements.forEach((element, index) => {
+        const slot = document.createElement('div');
+        slot.className = 'element-slot';
+        slot.style.cssText = `
+            width: 60px;
+            height: 60px;
+        `;
+        
+        // Verificar se já foi completado
+        if (completedElements.has(element.number)) {
+            slot.classList.add('filled', 'permanent');
+            slot.innerHTML = `
+                <div class="element-display">
+                    <div class="element-number">${element.number}</div>
+                    <div class="element-symbol">${element.symbol}</div>
+                    <div class="element-name">${element.name}</div>
+                </div>
+            `;
+        } else {
+            slot.classList.add('active');
+            slot.dataset.number = element.number;
+            slot.dataset.period = element.period;
+            slot.dataset.group = element.group;
+            
+            slot.addEventListener('dragover', handleDragOver);
+            slot.addEventListener('drop', handleDrop);
+        }
+        
+        specialGrid.appendChild(slot);
+    });
+    
+    DOM.tableGrid.appendChild(specialGrid);
 }
 
 // ============================================
