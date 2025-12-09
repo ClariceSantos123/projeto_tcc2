@@ -10,7 +10,7 @@ Uma aplicação web educacional gamificada para aprender a tabela periódica de 
 
 ### 🎮 Sistema de Jogo
 - **Drag and Drop** - Arraste elementos para suas posições corretas
-- **19 Famílias Químicas** - Cobertura de 115 elementos
+- **21 Famílias Químicas** - Cobertura de 140 elementos
 - **Feedback Visual** - Animações de acerto/erro em tempo real
 - **Dicas Contextualizadas** - Ajuda específica para cada família
 
@@ -24,13 +24,20 @@ Uma aplicação web educacional gamificada para aprender a tabela periódica de 
 - **Sistema de Estrelas** - 1 a 3 estrelas baseado no desempenho
 - **Conquistas Especiais** - Badges por performances excepcionais
 
+### 🧠 Sistema de Quiz (NOVO!)
+- **Pergunta ao Finalizar** - Uma pergunta sobre a família completada
+- **Bônus de +50 Pontos** - Recompensa por resposta correta
+- **Feedback Educativo** - Explicação da resposta correta
+- **Verificação de Aprendizado** - Garante que o aluno leu as informações
+- **Banco com 30+ Perguntas** - Perguntas específicas para cada família
+
 ### 📊 Progresso Persistente
 - **Elementos Salvos** - Elementos completados ficam permanentemente na tabela
 - **LocalStorage** - Progresso salvo automaticamente
 - **Estatísticas Globais**:
   - Pontuação total acumulada
-  - Elementos completados (X/115)
-  - Famílias completadas (X/19)
+  - Elementos completados (X/140)
+  - Famílias completadas (X/21)
 - **Indicadores Visuais** - Famílias completas marcadas com ✓
 
 ### ⏱️ Timer e Estatísticas
@@ -50,6 +57,7 @@ tabela-periodica/
 ├── data.js             # Dados das famílias (parte 1)
 ├── data2.js            # Dados das famílias (parte 2)
 ├── data3.js            # Dados das famílias (parte 3)
+├── quiz.js             # Banco de perguntas do quiz
 ├── app.js              # Lógica principal da aplicação
 └── README.md           # Documentação do projeto
 ```
@@ -59,7 +67,14 @@ tabela-periodica/
 ## 🚀 Como Executar
 
 1. **Clone ou baixe** os arquivos do projeto
-2. Certifique-se de ter **todos os 6 arquivos** na mesma pasta
+2. Certifique-se de ter **todos os 7 arquivos** na mesma pasta:
+   - index.html
+   - styles.css
+   - data.js
+   - data2.js
+   - data3.js
+   - quiz.js ⬅️ NOVO!
+   - app.js
 3. **Abra o arquivo** `index.html` em um navegador moderno
 4. **Pronto!** Não requer servidor ou instalação
 
@@ -77,13 +92,14 @@ tabela-periodica/
    - Use dicas se necessário (-10 pontos cada)
    - Acompanhe pontos, estrelas e tempo em tempo real
 
-3. **Após Completar**
+3. **Ao Completar a Família**
    - Veja sua pontuação final e estrelas conquistadas
-   - Elementos ficam salvos permanentemente na tabela
-   - Escolha jogar novamente ou selecionar outra família
+   - **Responda uma pergunta sobre a família** (novo!)
+   - Ganhe +50 pontos bônus por acerto no quiz
+   - Veja explicação educativa da resposta
 
 4. **Progresso Contínuo**
-   - Complete todas as 19 famílias
+   - Complete todas as 21 famílias
    - Veja a tabela periódica completa se formar
    - Acumule pontos e conquistas
 
@@ -235,7 +251,7 @@ createElementsPool()    // Cria pool (filtra completados)
 
 ## 👨‍💻 Autor
 
-**Clarice Aparecida dos Santos Fonseca**
+**[Seu Nome]**
 Trabalho de Conclusão de Curso - Sistemas de Informação
 
 ---
