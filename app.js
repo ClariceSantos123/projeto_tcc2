@@ -390,18 +390,25 @@ function createTableSlots() {
     });
 }
 
+// ============================================
+// POOL DE ELEMENTOS
+// ============================================
 function createElementsPool() {
-    const poolGrid = DOM.elementsPool.querySelector('.pool-grid');
-    if (!poolGrid) return;
+    if (!DOM.elementsPool) {
+        console.error('elementsPool não encontrado!');
+        return;
+    }
     
-    poolGrid.innerHTML = '';
+    DOM.elementsPool.innerHTML = '';
     
     // Filtrar apenas elementos que ainda não foram completados
     const elementsToPlace = currentElements.filter(el => !completedElements.has(el.number));
     
+    console.log('Criando pool com', elementsToPlace.length, 'elementos');
+    
     if (elementsToPlace.length === 0) {
         // Todos os elementos desta família já foram completados
-        poolGrid.innerHTML = `
+        DOM.elementsPool.innerHTML = `
             <p style="text-align: center; color: #4CAF50; font-weight: bold; width: 100%; padding: 20px;">
                 ✓ Todos os elementos desta família já foram completados!
             </p>
@@ -414,8 +421,10 @@ function createElementsPool() {
     
     shuffled.forEach(element => {
         const card = createElementCard(element);
-        poolGrid.appendChild(card);
+        DOM.elementsPool.appendChild(card);
     });
+    
+    console.log('Pool criado com sucesso!');
 }
 
 function createElementCard(element) {
