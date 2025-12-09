@@ -20,6 +20,11 @@ let startTime = null;
 let timerInterval = null;
 let hintsUsed = 0;
 
+// Quiz
+let quizAnswered = false;
+let quizCorrect = false;
+let currentQuestion = null;
+
 // Persistência de Dados
 let completedElements = new Set(); // Elementos já completados permanentemente
 let completedFamilies = new Set(); // Famílias 100% completas
@@ -242,6 +247,9 @@ function initGame() {
     hintsUsed = 0;
     startTime = null;
     stopTimer();
+    quizAnswered = false;
+    quizCorrect = false;
+    currentQuestion = null;
     
     updateProgress();
     updateCurrentStats();
@@ -599,6 +607,91 @@ function updateProgress() {
 }
 
 // ============================================
+// SISTEMA DE QUIZ
+// ============================================
+function createQuiz() {
+    // Obter uma pergunta aleatória para a família atual
+    const familyKey = Object.keys(FAMILIES_DATA).find(key => FAMILIES_DATA[key] === currentFamily);
+    currentQuestion = getRandomQuestion(familyKey);
+    
+    const quizHTML = `
+        <div class="quiz-container">
+            <div class="quiz-header">
+                <h3>🧠 Quiz de Conhecimento</h3>
+                <p style="color: #666; font-size: 0.95em;">Responda corretamente e ganhe +50 pontos bônus!</p>
+            </div>
+            
+            <div class="quiz-question">
+                ${currentQuestion.question}
+            </div>
+            
+            <div class="quiz-options" id="quizOptions">
+                ${currentQuestion.options.map((option, index) => `
+                    <div class="quiz-option" data-index="${index}" onclick="checkQuizAnswer(${index})">
+                        ${String.fromCharCode(65 + index)}) ${option}
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div id="quizResult"></div>
+        </div>
+    `;
+    
+    return quizHTML;
+}
+
+function checkQuizAnswer(selectedIndex) {
+    if (quizAnswered) return; // Já respondeu
+    
+    quizAnswered = true;
+    const isCorrect = selectedIndex === currentQuestion.correct;
+    quizCorrect = isCorrect;
+    
+    // Desabilitar todas as opções
+    const options = document.querySelectorAll('.quiz-option');
+    options.forEach((option, index) => {
+        option.classList.add('disabled');
+        
+        if (index === currentQuestion.correct) {
+            option.classList.add('correct');
+        } else if (index === selectedIndex && !isCorrect) {
+            option.classList.add('incorrect');
+        }
+    });
+    
+    // Mostrar resultado
+    const resultDiv = document.getElementById('quizResult');
+    
+    if (isCorrect) {
+        currentScore += 50; // Bônus de 50 pontos
+        totalScore += 50;
+        updateCurrentStats();
+        saveProgress();
+        
+        resultDiv.innerHTML = `
+            <div class="quiz-result correct-answer">
+                ✅ Resposta Correta!
+                <div class="quiz-bonus">+50 Pontos Bônus! 🎉</div>
+            </div>
+            <div class="quiz-explanation">
+                <strong>💡 Explicação:</strong> ${currentQuestion.explanation}
+            </div>
+        `;
+    } else {
+        resultDiv.innerHTML = `
+            <div class="quiz-result incorrect-answer">
+                ❌ Resposta Incorreta
+            </div>
+            <div class="quiz-explanation">
+                <strong>💡 Resposta Correta:</strong> ${currentQuestion.options[currentQuestion.correct]}
+                <br><br>
+                <strong>Explicação:</strong> ${currentQuestion.explanation}
+            </div>
+        `;
+    }
+}
+
+// ============================================
 // MODAIS E MENSAGENS
 // ============================================
 function showElementInfo(element) {
@@ -646,7 +739,7 @@ function showHint() {
 function showCompletionMessage() {
     const stats = calculateScore();
     
-    // Atualizar pontuação global
+    // Atualizar pontuação global (será atualizado novamente se acertar o quiz)
     totalScore += stats.score;
     
     // Verificar se a família foi 100% completada
@@ -700,6 +793,8 @@ function showCompletionMessage() {
         </div>
         
         ${achievementsHTML}
+        
+        ${createQuiz()}
         
         <p style="margin-top: 15px; text-align: center; color: #666;">
             <strong>Pontuação Total:</strong> ${totalScore.toLocaleString()} pontos
