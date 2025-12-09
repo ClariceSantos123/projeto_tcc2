@@ -667,6 +667,129 @@ header p {
 }
 
 /* ================================
+   QUIZ
+================================ */
+.quiz-container {
+    margin: 25px 0;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px solid var(--primary-color);
+}
+
+.quiz-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.quiz-header h3 {
+    color: var(--primary-color);
+    font-size: 1.4em;
+    margin-bottom: 10px;
+}
+
+.quiz-question {
+    font-size: 1.15em;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quiz-option {
+    padding: 15px 20px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.05em;
+    text-align: left;
+}
+
+.quiz-option:hover {
+    border-color: var(--primary-color);
+    background: #f0f0ff;
+    transform: translateX(5px);
+}
+
+.quiz-option.selected {
+    border-color: var(--primary-color);
+    background: #e8e8ff;
+}
+
+.quiz-option.correct {
+    border-color: var(--success-color);
+    background: #d4edda;
+    color: #155724;
+}
+
+.quiz-option.incorrect {
+    border-color: var(--error-color);
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.quiz-option.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.quiz-explanation {
+    margin-top: 20px;
+    padding: 15px;
+    background: #d1ecf1;
+    border-left: 4px solid #0c5460;
+    border-radius: 5px;
+    font-size: 1.05em;
+    line-height: 1.6;
+}
+
+.quiz-result {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.quiz-result.correct-answer {
+    color: var(--success-color);
+}
+
+.quiz-result.incorrect-answer {
+    color: var(--error-color);
+}
+
+.quiz-bonus {
+    display: inline-block;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+    animation: bounceIn 0.5s;
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ================================
    RESPONSIVIDADE
 ================================ */
 @media (max-width: 768px) {
