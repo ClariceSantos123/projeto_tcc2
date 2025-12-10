@@ -68,6 +68,15 @@ function init() {
     renderFamilyCards();
     setupEventListeners();
     updateGlobalStats();
+    
+    // Verificação automática na inicialização
+    const check = checkMissingElements();
+    console.log(`Sistema carregado com ${check.total} elementos únicos`);
+    if (check.missing.length > 0) {
+        console.warn(`⚠️ Faltam ${check.missing.length} elementos:`, check.missing);
+    } else {
+        console.log('✅ Todos os 118 elementos estão cadastrados!');
+    }
 }
 
 function setupEventListeners() {
@@ -129,9 +138,15 @@ function resetAllProgress() {
 }
 
 function updateGlobalStats() {
+    // Contar elementos únicos no sistema
+    const allElements = new Set();
+    for (const family of Object.values(FAMILIES_DATA)) {
+        family.elements.forEach(el => allElements.add(el.number));
+    }
+    
     DOM.totalScore.textContent = totalScore.toLocaleString();
-    DOM.totalElements.textContent = `${completedElements.size}/115`;
-    DOM.totalFamilies.textContent = `${completedFamilies.size}/19`;
+    DOM.totalElements.textContent = `${completedElements.size}/${allElements.size}`;
+    DOM.totalFamilies.textContent = `${completedFamilies.size}/21`;
 }
 
 // ============================================
@@ -844,4 +859,41 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
+}
+
+// Função para verificar elementos faltantes
+function checkMissingElements() {
+    const allElements = new Set();
+    for (const family of Object.values(FAMILIES_DATA)) {
+        family.elements.forEach(el => allElements.add(el.number));
+    }
+    
+    const elementsArray = Array.from(allElements).sort((a, b) => a - b);
+    
+    const missing = [];
+    for (let i = 1; i <= 118; i++) {
+        if (!allElements.has(i)) {
+            missing.push(i);
+        }
+    }
+    
+    console.log('═══════════════════════════════════════');
+    console.log('📊 VERIFICAÇÃO DA TABELA PERIÓDICA');
+    console.log('═══════════════════════════════════════');
+    console.log('Total de elementos únicos:', allElements.size);
+    console.log('Elementos cadastrados:', elementsArray);
+    
+    if (missing.length > 0) {
+        console.warn('⚠️ ELEMENTOS FALTANDO:', missing);
+        console.log('Faltam', missing.length, 'elementos para completar os 118');
+    } else {
+        console.log('✅ Todos os 118 elementos estão cadastrados!');
+    }
+    console.log('═══════════════════════════════════════');
+    
+    return {
+        total: allElements.size,
+        elements: elementsArray,
+        missing: missing
+    };
 }
