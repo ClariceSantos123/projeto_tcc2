@@ -432,7 +432,9 @@ function createTableSlots() {
 }
 
 function createLanthanideActinideSlots() {
-    // Criar linha separada para Lantanídeos ou Actinídeos
+    // Esta função agora é chamada apenas se a família atual for Ln, An ou P7
+    // Ela adiciona os slots de forma especial quando o usuário está jogando essas famílias
+    
     const separator = document.createElement('div');
     separator.style.cssText = `
         grid-column: 1 / -1;
@@ -452,10 +454,9 @@ function createLanthanideActinideSlots() {
         margin: 10px 0;
         font-size: 1.2em;
     `;
-    title.textContent = currentFamily.name;
+    title.textContent = currentFamily.name + ' - Modo Jogo';
     DOM.tableGrid.appendChild(title);
     
-    // Criar grid horizontal para os elementos (15 elementos)
     const specialGrid = document.createElement('div');
     specialGrid.style.cssText = `
         grid-column: 1 / -1;
@@ -469,12 +470,8 @@ function createLanthanideActinideSlots() {
     currentElements.forEach((element, index) => {
         const slot = document.createElement('div');
         slot.className = 'element-slot';
-        slot.style.cssText = `
-            width: 60px;
-            height: 60px;
-        `;
+        slot.style.cssText = `width: 60px; height: 60px;`;
         
-        // Verificar se já foi completado usando o Set
         const isCompleted = completedElements.has(element.number);
         
         if (isCompleted) {
@@ -500,6 +497,92 @@ function createLanthanideActinideSlots() {
     });
     
     DOM.tableGrid.appendChild(specialGrid);
+}
+
+function createLanthanideActinideRows() {
+    // Linhas PERMANENTES de Lantanídeos e Actinídeos (sempre visíveis)
+    
+    // Espaço separador
+    const separator = document.createElement('div');
+    separator.style.cssText = `grid-column: 1 / -1; grid-row: 9; height: 20px;`;
+    DOM.tableGrid.appendChild(separator);
+    
+    // Label "Lantanídeos"
+    const lnLabel = document.createElement('div');
+    lnLabel.style.cssText = `
+        grid-column: 1 / 4;
+        grid-row: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: var(--primary-color);
+    `;
+    lnLabel.textContent = 'Lantanídeos';
+    DOM.tableGrid.appendChild(lnLabel);
+    
+    // Label "Actinídeos"
+    const anLabel = document.createElement('div');
+    anLabel.style.cssText = `
+        grid-column: 1 / 4;
+        grid-row: 11;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: var(--primary-color);
+    `;
+    anLabel.textContent = 'Actinídeos';
+    DOM.tableGrid.appendChild(anLabel);
+    
+    // Criar slots para Lantanídeos (57-71) na linha 10
+    const lanthanides = FAMILIES_DATA['lantanideos'].elements;
+    lanthanides.forEach((element, index) => {
+        createSpecialSlot(element, 10, index + 4); // começa na coluna 4
+    });
+    
+    // Criar slots para Actinídeos (89-103) na linha 11
+    const actinides = FAMILIES_DATA['actinideos'].elements;
+    actinides.forEach((element, index) => {
+        createSpecialSlot(element, 11, index + 4); // começa na coluna 4
+    });
+}
+
+function createSpecialSlot(element, row, col) {
+    const slot = document.createElement('div');
+    slot.className = 'element-slot';
+    slot.style.cssText = `grid-column: ${col}; grid-row: ${row};`;
+    
+    // Verificar se está completado
+    const isCompleted = completedElements.has(element.number);
+    
+    // Verificar se está na família atual sendo jogada
+    const isCurrentFamily = currentElements.some(el => el.number === element.number);
+    
+    if (isCompleted) {
+        slot.classList.add('filled', 'permanent');
+        slot.innerHTML = `
+            <div class="element-display">
+                <div class="element-number">${element.number}</div>
+                <div class="element-symbol">${element.symbol}</div>
+                <div class="element-name">${element.name}</div>
+            </div>
+        `;
+    } else if (isCurrentFamily) {
+        slot.classList.add('active');
+        slot.dataset.number = element.number;
+        slot.dataset.period = element.period;
+        slot.dataset.group = element.group;
+        
+        slot.addEventListener('dragover', handleDragOver);
+        slot.addEventListener('drop', handleDrop);
+    } else {
+        slot.classList.add('inactive');
+    }
+    
+    DOM.tableGrid.appendChild(slot);
 }
 
 // ============================================
@@ -786,6 +869,12 @@ function showCompletionMessage() {
     // Salvar progresso
     saveProgress();
     
+    // VERIFICAR SE COMPLETOU TODA A TABELA (118 elementos)
+    if (completedElements.size === 118) {
+        showFullTableCompletionMessage();
+        return;
+    }
+    
     // Gerar estrelas visuais
     const starsHTML = '⭐'.repeat(stats.stars) + '☆'.repeat(3 - stats.stars);
     
@@ -830,12 +919,55 @@ function showCompletionMessage() {
         ${createQuiz()}
         
         <p style="margin-top: 15px; text-align: center; color: #666;">
-            <strong>Pontuação Total:</strong> ${totalScore.toLocaleString()} pontos
+            <strong>Pontuação Total:</strong> ${totalScore.toLocaleString()} pontos<br>
+            <strong>Progresso:</strong> ${completedElements.size}/118 elementos | ${completedFamilies.size}/21 famílias
         </p>
         
         <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="resetGame(); closeModal();">🔄 Jogar Novamente</button>
             <button class="btn btn-secondary" onclick="backToMenu(); closeModal();">🏠 Escolher Outra Família</button>
+        </div>
+    `;
+    openModal();
+}
+
+function showFullTableCompletionMessage() {
+    DOM.modalTitle.textContent = '🏆 TABELA PERIÓDICA COMPLETA! 🏆';
+    DOM.modalBody.innerHTML = `
+        <div style="text-align: center; padding: 30px 20px;">
+            <div style="font-size: 5em; margin-bottom: 20px;">
+                🎉🧪🔬
+            </div>
+            
+            <div class="success-message" style="font-size: 1.3em; padding: 25px;">
+                PARABÉNS!<br>
+                Você completou TODA a Tabela Periódica!
+            </div>
+            
+            <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); border-radius: 15px; color: white;">
+                <h2 style="margin-bottom: 15px;">🌟 CONQUISTA MÁXIMA 🌟</h2>
+                <p style="font-size: 1.2em; margin: 10px 0;">118 Elementos Organizados</p>
+                <p style="font-size: 1.2em; margin: 10px 0;">21 Famílias Dominadas</p>
+                <p style="font-size: 1.5em; margin: 15px 0; font-weight: bold;">${totalScore.toLocaleString()} Pontos Totais</p>
+            </div>
+            
+            <div style="background: #f0f0ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h3 style="color: var(--primary-color); margin-bottom: 15px;">🎓 Você é um Mestre da Química!</h3>
+                <p style="line-height: 1.8; color: #666;">
+                    Você demonstrou conhecimento excepcional sobre todos os elementos químicos, 
+                    desde o Hidrogênio (H) até o Oganessônio (Og). Parabéns pela dedicação e 
+                    pelo aprendizado completo da Tabela Periódica!
+                </p>
+            </div>
+            
+            <div class="achievement-badge" style="font-size: 1.2em; padding: 15px 30px; margin: 10px;">
+                🏆 MESTRE DA TABELA PERIÓDICA
+            </div>
+            
+            <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="closeModal(); backToMenu();">🏠 Voltar ao Início</button>
+                <button class="btn btn-secondary" onclick="resetAllProgress(); closeModal();">🔄 Começar Nova Jornada</button>
+            </div>
         </div>
     `;
     openModal();
