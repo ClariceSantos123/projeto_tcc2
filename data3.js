@@ -248,8 +248,9 @@ Object.assign(FAMILIES_DATA, {
 
     'hidrogenio': {
         name: 'Hidrogênio',
-        group: 1,
+        group: 'H',
         icon: '🎈',
+        multiGroup: true,
         elements: [
             { number: 1, symbol: 'H', name: 'Hidrogênio', mass: '1.008', period: 1, group: 1,
               description: 'Elemento mais abundante no universo. Combustível das estrelas. Usado em fertilizantes, refinarias e células de combustível.',
