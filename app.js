@@ -611,14 +611,13 @@ function handleDrop(e) {
         updateProgress();
         updateCurrentStats();
         
-        console.log('Elemento', droppedNumber, 'salvo. Total completados:', completedElements.size);
+        console.log('Elemento', droppedNumber, 'salvo. Colocados:', placedElements, '/', currentElements.length);
         
         // Mostrar informações
         showElementInfo(element);
         
-        // Verificar conclusão
-        const elementsToComplete = currentElements.filter(el => !completedElements.has(el.number));
-        if (elementsToComplete.length === 0 || placedElements === elementsToComplete.length) {
+        // Verificar conclusão - TODOS os elementos da família atual devem estar colocados
+        if (placedElements === currentElements.length) {
             stopTimer();
             setTimeout(showCompletionMessage, 500);
         }
