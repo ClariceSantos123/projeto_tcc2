@@ -314,9 +314,11 @@ header p {
 .periodic-table {
     background: var(--bg-light);
     border-radius: 10px;
-    padding: 25px;
+    padding: 20px;
     overflow-x: auto;
+    overflow-y: auto;
     width: 100%;
+    max-height: 70vh;
 }
 
 .periodic-table h3 {
@@ -335,6 +337,41 @@ header p {
     display: grid;
     margin: 0 auto;
     justify-content: center;
+    min-width: 1100px;
+}
+
+/* Escala responsiva para telas pequenas */
+@media (max-width: 1400px) {
+    #tableGrid {
+        transform: scale(0.85);
+        transform-origin: top left;
+    }
+}
+
+@media (max-width: 1200px) {
+    #tableGrid {
+        transform: scale(0.75);
+        transform-origin: top left;
+    }
+}
+
+@media (max-width: 1000px) {
+    #tableGrid {
+        transform: scale(0.65);
+        transform-origin: top left;
+    }
+}
+
+@media (max-width: 800px) {
+    #tableGrid {
+        transform: scale(0.55);
+        transform-origin: top left;
+    }
+    
+    .periodic-table {
+        padding: 10px;
+        max-height: 60vh;
+    }
 }
 
 /* ================================
@@ -887,4 +924,4 @@ header p {
 
 .stat-mini.score-animation {
     animation: scoreUp 0.3s ease;
-}
+   }
